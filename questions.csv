@@ -1,3 +1,1 @@
-id,review_date,question,answer,review_box
-0,2024-07-15,This question should be returned,Correct,2
-1,2024-07-10,This question should not,Incorrect,3
+id|review_date|question|answer|review_box

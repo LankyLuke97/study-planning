@@ -3,8 +3,9 @@ import dateutil
 import pandas as pd
 
 def newStudy(csv, today):
-    tomorrow = (today + dateutil.relativedelta.relativedelta(days=1)).strftime('%d-%m-%Y')
-    nextId = max([line.split(',')[0] for line in open(csv,'r').readlines()]) + 1
+    tomorrow = (today + dateutil.relativedelta.relativedelta(days=1)).strftime('%Y-%m-%d')
+    lines = open(csv,'r').readlines()
+    nextId = 0 if len(lines) == 1 else max([int(line.split(',')[0]) for line in lines[1:]]) + 1
     with open(csv, 'a') as db:
         while True:
             inp = input('Do you have more questions to add? ').lower()
@@ -22,25 +23,25 @@ def newStudy(csv, today):
                 answer = input('Please supply answer: ')
                 if input('Are you happy with the answer? ').lower().startswith('y'):
                     break
-            db.write(f"{nextId},{tomorrow},{question},{answer},1")
+            db.write(f"{nextId}|{tomorrow}|{question}|{answer}|0")
             nextId += 1
 
 def review(csv, date_threshold):
-    questions = pd.read_csv(csv,index_col=0)
-    questions['review_date'] = pd.to_datetime(questions['review_date'], format='%d-%m-%Y')
+    questions = pd.read_csv(csv,index_col=0,sep='|')
+    questions['review_date'] = pd.to_datetime(questions['review_date'], format='%Y-%m-%d')
     todays = questions.loc[questions['review_date'] <= date_threshold, :].sample(frac=1)
     nextDates = [dateutil.relativedelta.relativedelta(days=1), dateutil.relativedelta.relativedelta(days=3), dateutil.relativedelta.relativedelta(weeks=1), dateutil.relativedelta.relativedelta(weeks=2), dateutil.relativedelta.relativedelta(months=1)]
     for _ in range(len(todays)):
         idx, row = next(todays.iterrows())
-        input(f"{row[1]}\n")
-        print(f"The correct answer was: {row[2]}")
-        newBox = row[3]
+        input(f"{row.iloc[1]}\n")
+        print(f"The correct answer was: {row.iloc[2]}")
+        newBox = row.iloc[3]
         if input('Were you correct? ').lower().startswith('y'):
-            newBox = min(row[3] + 1, 4)
+            newBox = min(row.iloc[3] + 1, 4)
         else:
-            newBox = max(0, row[3] - 1)
-        questions.iloc[idx] = ((row[0] + nextDates[newBox]).strftime('%d-%m-%Y'), row[1], row[2], newBox)
-    questions.to_csv(csv)
+            newBox = max(0, row.iloc[3] - 1)
+        questions.iloc[idx] = ((row.iloc[0] + nextDates[newBox]).strftime('%Y-%m-%d'), row.iloc[1], row.iloc[2], newBox)
+    questions.to_csv(csv,sep='|')
 
 if __name__=='__main__':
     today = datetime.datetime.today()
