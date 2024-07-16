@@ -5,7 +5,7 @@ import pandas as pd
 def newStudy(csv, today):
     tomorrow = (today + dateutil.relativedelta.relativedelta(days=1)).strftime('%Y-%m-%d')
     lines = open(csv,'r').readlines()
-    nextId = 0 if len(lines) == 1 else max([int(line.split(',')[0]) for line in lines[1:]]) + 1
+    nextId = 0 if len(lines) == 1 else max([int(line.split(',')[0]) for line in lines[1:]]) + 1 # For consistency, switch to using pandas here
     with open(csv, 'a') as db:
         while True:
             inp = input('Do you have more questions to add? ').lower()
