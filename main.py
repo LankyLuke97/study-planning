@@ -5,26 +5,30 @@ import pandas as pd
 def newStudy(csv, today):
     tomorrow = (today + dateutil.relativedelta.relativedelta(days=1)).strftime('%Y-%m-%d')
     lines = open(csv,'r').readlines()
-    nextId = 0 if len(lines) == 1 else max([int(line.split('|')[0]) for line in lines[1:]]) + 1 # For consistency, switch to using pandas here
-    with open(csv, 'a') as db:
+    currentDB = pd.read_csv(csv,index_col=0,sep='|')
+    newQuestions = {col: [] for col in currentDB.columns}
+    while True:
+        inp = input('Do you have more questions to add? ').lower()
+        if inp.startswith('n'):
+            break
+        if not inp.startswith('y'):
+            continue
+        question = ''
+        answer = ''
         while True:
-            inp = input('Do you have more questions to add? ').lower()
-            if inp.startswith('n'):
+            question = input('Please write question: ')
+            if input('Are you happy with the question? ').lower().startswith('y'):
+                newQuestions['question'].append(question)
                 break
-            if not inp.startswith('y'):
-                continue
-            question = ''
-            answer = ''
-            while True:
-                question = input('Please write question: ')
-                if input('Are you happy with the question? ').lower().startswith('y'):
-                    break
-            while True:
-                answer = input('Please supply answer: ')
-                if input('Are you happy with the answer? ').lower().startswith('y'):
-                    break
-            db.write(f"{nextId}|{tomorrow}|{question}|{answer}|0\n")
-            nextId += 1
+        while True:
+            answer = input('Please supply answer: ')
+            if input('Are you happy with the answer? ').lower().startswith('y'):
+                newQuestions['answer'].append(answer)
+                break
+    newQuestions['review_date'] = [tomorrow] * len(newQuestions['question'])
+    newQuestions['review_box'] = [0] * len(newQuestions['question'])
+    newDB = pd.concat([currentDB, pd.DataFrame(newQuestions)], ignore_index=True)
+    newDB.to_csv(csv,sep='|')
 
 def review(csv, date_threshold):
     questions = pd.read_csv(csv,index_col=0,sep='|')
