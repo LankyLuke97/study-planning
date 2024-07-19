@@ -2,6 +2,7 @@ import datetime
 import dateutil
 import os
 import pandas as pd
+import sys
 
 def newStudy(csv, today):
     tomorrow = (today + dateutil.relativedelta.relativedelta(days=1)).strftime('%Y-%m-%d')
@@ -62,8 +63,11 @@ if __name__=='__main__':
     
     topic = input("What would you like to study? ").lower()
     if not os.path.exists(topic):
-        with open(f"{topic}.csv",'w') as questions:
-            questions.write('|review_date|question|answer|review_box|tags')
+        if input(f"{topic} doesn't yet exist - would you like to start a new file? ").lower().startswith('y'):
+            with open(f"{topic}.csv",'w') as questions:
+                questions.write('|review_date|question|answer|review_box|tags')
+        else:
+            sys.exit() 
 
     if input('Have you studied something new? ').lower().startswith('y'):
         newStudy(f"{topic}.csv", today)
