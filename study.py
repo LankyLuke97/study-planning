@@ -52,7 +52,8 @@ def review(csv, date_threshold):
             newBox = min(row['review_box'] + 1, 4)
         else:
             newBox = max(0, row['review_box'] - 1)
-        row['review_date'] = (row['review_date'] + nextDates[newBox]).strftime('%Y-%m-%d')
+        row['review_date'] = (datetime.datetime.today() + nextDates[newBox]).strftime('%Y-%m-%d')
+        row['review_box'] = newBox
         updated[idx] = row
     for idx in updated:
         questions.iloc[idx] = updated[idx]
@@ -62,7 +63,7 @@ if __name__=='__main__':
     today = datetime.datetime.today()
     
     topic = input("What would you like to study? ").lower()
-    if not os.path.exists(topic):
+    if not os.path.exists(f"{topic}.csv"):
         if input(f"{topic} doesn't yet exist - would you like to start a new file? ").lower().startswith('y'):
             with open(f"{topic}.csv",'w') as questions:
                 questions.write('|review_date|question|answer|review_box|tags')
@@ -71,5 +72,5 @@ if __name__=='__main__':
 
     if input('Have you studied something new? ').lower().startswith('y'):
         newStudy(f"{topic}.csv", today)
-
-    questions = review(f"{topic}.csv", today)
+    if input('Would you like to review questions for today? ').lower().startswith('y'):
+        questions = review(f"{topic}.csv", today)
