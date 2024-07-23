@@ -49,9 +49,9 @@ def review(csv, date_threshold):
         print(f"The correct answer was: {row['answer']}")
         newBox = row['review_box']
         if input('Were you correct? ').lower().startswith('y'):
-            newBox = min(row['review_box'] + 1, 4)
+            newBox = int(min(row['review_box'] + 1, 4))
         else:
-            newBox = max(0, row['review_box'] - 1)
+            newBox = int(max(0, row['review_box'] - 1))
         row['review_date'] = (datetime.datetime.today() + nextDates[newBox]).strftime('%Y-%m-%d')
         row['review_box'] = newBox
         updated[idx] = row
@@ -70,7 +70,6 @@ if __name__=='__main__':
         else:
             sys.exit() 
 
-    if input('Have you studied something new? ').lower().startswith('y'):
-        newStudy(f"{topic}.csv", today)
+    newStudy(f"{topic}.csv", today)
     if input('Would you like to review questions for today? ').lower().startswith('y'):
         questions = review(f"{topic}.csv", today)
