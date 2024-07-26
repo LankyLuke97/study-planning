@@ -33,6 +33,8 @@ def newStudy(csv, today):
             if input('Are you happy with the tags? ').lower().startswith('y'):
                 newQuestions['tags'].append(tags)
                 break
+        with open(csv,'a') as db:
+            db.write(f"Question: {question} | Answer: {answer}\n")
     newQuestions['review_date'] = [tomorrow] * len(newQuestions['question'])
     newQuestions['review_box'] = [0] * len(newQuestions['question'])
     newDB = pd.concat([currentDB, pd.DataFrame(newQuestions)], ignore_index=True)
