@@ -45,7 +45,6 @@ def review(csv, date_threshold):
     questions['review_date'] = pd.to_datetime(questions['review_date'], format='%Y-%m-%d')
     todays = questions.loc[questions['review_date'] <= date_threshold, :].sample(frac=1)
     nextDates = [dateutil.relativedelta.relativedelta(days=1), dateutil.relativedelta.relativedelta(days=3), dateutil.relativedelta.relativedelta(weeks=1), dateutil.relativedelta.relativedelta(weeks=2), dateutil.relativedelta.relativedelta(months=1)]
-    updated = {}
     for idx, row in todays.iterrows():
         input(f"{row['question']}\n")
         print(f"The correct answer was: {row['answer']}")
@@ -56,9 +55,8 @@ def review(csv, date_threshold):
             newBox = int(max(0, row['review_box'] - 1))
         row['review_date'] = (datetime.datetime.today() + nextDates[newBox]).strftime('%Y-%m-%d')
         row['review_box'] = newBox
-        updated[idx] = row
-    for idx in updated:
-        questions.iloc[idx] = updated[idx]
+        questions.iloc[idx] = row
+        questions.to_csv(csv,sep='|')
     questions.to_csv(csv,sep='|')
 
 if __name__=='__main__':
