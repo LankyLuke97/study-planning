@@ -6,7 +6,6 @@ import sys
 
 def newStudy(csv, today):
     tomorrow = (today + dateutil.relativedelta.relativedelta(days=1)).strftime('%Y-%m-%d')
-    lines = open(csv,'r').readlines()
     currentDB = pd.read_csv(csv,index_col=0,sep='|')
     newQuestions = {col: [] for col in currentDB.columns}
     while True:
@@ -46,7 +45,9 @@ def review(csv, date_threshold):
     todays = questions.loc[questions['review_date'] <= date_threshold, :].sample(frac=1)
     nextDates = [dateutil.relativedelta.relativedelta(days=1), dateutil.relativedelta.relativedelta(days=3), dateutil.relativedelta.relativedelta(weeks=1), dateutil.relativedelta.relativedelta(weeks=2), dateutil.relativedelta.relativedelta(months=1)]
     for idx, row in todays.iterrows():
-        input(f"{row['question']}\n")
+        if "i am done" in input(f"{row['question']}\n").lower():
+            print("Finishing studying for now.")
+            break
         print(f"The correct answer was: {row['answer']}")
         newBox = row['review_box']
         if input('Were you correct? ').lower().startswith('y'):
