@@ -43,6 +43,9 @@ def review(csv, date_threshold):
     questions = pd.read_csv(csv,index_col=0,sep='|')
     questions['review_date'] = pd.to_datetime(questions['review_date'], format='%Y-%m-%d')
     todays = questions.loc[questions['review_date'] <= date_threshold, :].sample(frac=1)
+    print('Spread of questions:')
+    print(questions['review_date'].value_counts().sort_index(ascending=True))
+    print('There are {} questions to answer today.'.format(len(todays)))
     nextDates = [dateutil.relativedelta.relativedelta(days=1), dateutil.relativedelta.relativedelta(days=3), dateutil.relativedelta.relativedelta(weeks=1), dateutil.relativedelta.relativedelta(weeks=2), dateutil.relativedelta.relativedelta(months=1)]
     for idx, row in todays.iterrows():
         if "i am done" in input(f"{row['question']}\n").lower():
