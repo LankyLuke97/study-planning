@@ -36,27 +36,35 @@ def newStudy(csv, today):
             db.write(f"Question: {question} | Answer: {answer}\n")
     newQuestions['review_date'] = [tomorrow] * len(newQuestions['question'])
     newQuestions['review_box'] = [0] * len(newQuestions['question'])
+    newQuestions['hint'] = [''] * len(newQuestions['question'])
     newDB = pd.concat([currentDB, pd.DataFrame(newQuestions)], ignore_index=True)
     newDB.to_csv(csv,sep='|')
 
 def review(csv, date_threshold):
     questions = pd.read_csv(csv,index_col=0,sep='|')
     questions['review_date'] = pd.to_datetime(questions['review_date'], format='%Y-%m-%d')
+    questions['hint'] = questions['hint'].astype(str)
     todays = questions.loc[questions['review_date'] <= date_threshold, :].sample(frac=1)
     print('Spread of questions:')
     print(questions['review_date'].value_counts().sort_index(ascending=True))
     print('There are {} questions to answer today.'.format(len(todays)))
     nextDates = [dateutil.relativedelta.relativedelta(days=1), dateutil.relativedelta.relativedelta(days=3), dateutil.relativedelta.relativedelta(weeks=1), dateutil.relativedelta.relativedelta(weeks=2), dateutil.relativedelta.relativedelta(months=1)]
     for idx, row in todays.iterrows():
-        if "i am done" in input(f"{row['question']}\n").lower():
+        if "i am done" in input(f"{row['question']} {row['hint']}\n").lower():
             print("Finishing studying for now.")
             break
         print(f"The correct answer was: {row['answer']}")
         newBox = row['review_box']
         if input('Were you correct? ').lower().startswith('y'):
             newBox = int(min(row['review_box'] + 1, 4))
+            row['hint'] = ' '
         else:
             newBox = int(max(0, row['review_box'] - 1))
+            hint = input('Would you like to add a hint? ')
+            if not hint.lower().startswith('no'):
+                if len(hint) == 0:
+                    hint = ' '
+                row['hint'] = hint
         row['review_date'] = (datetime.datetime.today() + nextDates[newBox]).strftime('%Y-%m-%d')
         row['review_box'] = newBox
         questions.iloc[idx] = row
