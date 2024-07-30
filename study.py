@@ -59,12 +59,12 @@ def review(csv, date_threshold):
             newBox = int(min(row['review_box'] + 1, 4))
             row['hint'] = ' '
         else:
+            if int(row['review_box']) == 0:
+                hint = input('Would you like to add a hint? ')
+                if not hint.lower().startswith('no'):
+                    if len(hint) != 0:
+                        row['hint'] = hint
             newBox = int(max(0, row['review_box'] - 1))
-            hint = input('Would you like to add a hint? ')
-            if not hint.lower().startswith('no'):
-                if len(hint) == 0:
-                    hint = ' '
-                row['hint'] = hint
         row['review_date'] = (datetime.datetime.today() + nextDates[newBox]).strftime('%Y-%m-%d')
         row['review_box'] = newBox
         questions.iloc[idx] = row
