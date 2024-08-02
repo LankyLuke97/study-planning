@@ -42,6 +42,7 @@ def newStudy(csv, today):
 
 def review(csv, date_threshold):
     questions = pd.read_csv(csv,index_col=0,sep='|')
+    questions.fillna(' ', inplace=True)
     questions['review_date'] = pd.to_datetime(questions['review_date'], format='%Y-%m-%d')
     questions['hint'] = questions['hint'].astype(str)
     todays = questions.loc[questions['review_date'] <= date_threshold, :].sample(frac=1)
