@@ -49,9 +49,13 @@ def review(csv, date_threshold):
     print('Spread of questions:')
     print(questions['review_date'].value_counts().sort_index(ascending=True))
     print('There are {} questions to answer today.'.format(len(todays)))
+    correct = 0
+    total_questions = len(todays)
+    progress = 0
     nextDates = [dateutil.relativedelta.relativedelta(days=1), dateutil.relativedelta.relativedelta(days=3), dateutil.relativedelta.relativedelta(weeks=1), dateutil.relativedelta.relativedelta(weeks=2), dateutil.relativedelta.relativedelta(months=1)]
     for idx, row in todays.iterrows():
-        if "i am done" in input(f"{row['question']} {row['hint']}\n").lower():
+        progress += 1
+        if "i am done" in input(f"Question {progress}/{total_questions}: {row['question']} {row['hint']}\n").lower():
             print("Finishing studying for now.")
             break
         print(f"The correct answer was: {row['answer']}")
@@ -59,6 +63,7 @@ def review(csv, date_threshold):
         if input('Were you correct? ').lower().startswith('y'):
             newBox = int(min(row['review_box'] + 1, 4))
             row['hint'] = ' '
+            correct += 1
         else:
             if int(row['review_box']) == 0:
                 hint = input('Would you like to add a hint? ')
@@ -70,7 +75,9 @@ def review(csv, date_threshold):
         row['review_box'] = newBox
         questions.iloc[idx] = row
         questions.to_csv(csv,sep='|')
-    questions.to_csv(csv,sep='|')
+    if total_questions > 0:
+        questions.to_csv(csv,sep='|')
+        print("You got {} out of {} correct".format(correct, total_questions))
 
 if __name__=='__main__':
     today = datetime.datetime.today()
