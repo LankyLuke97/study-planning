@@ -1,6 +1,19 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QLineEdit, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import *
 
 import sys
+
+
+class AnswerTopicWindow(QMainWindow):
+    pass
+
+class ChooseTopicWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        testTopics = ["Wills","Proprty","Relax"]
+        self.setWindowTitle("Choose today's topic")
+        layout = QStackedLayout()
+        
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -23,7 +36,7 @@ class MainWindow(QMainWindow):
 
 app = QApplication(sys.argv)
 
-window = MainWindow()
+window = ChooseTopicWindow()
 window.show()
 
 app.exec()
