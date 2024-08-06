@@ -13,7 +13,7 @@ class AnswerTopicWindow(QMainWindow):
     def __init__(self, topic):
         super().__init__()
         self.setWindowTitle("Answer topic")
-        layout = QHBoxLayout()
+        layout = QGridLayout()
         self.answers = [0, 0]
         self.topic = topic
         correct_button = QPushButton("Correct")
@@ -22,11 +22,16 @@ class AnswerTopicWindow(QMainWindow):
 
         correct_button.clicked.connect(self.correct_pushed)        
         incorrect_button.clicked.connect(self.incorrect_pushed)        
-        finished_button.clicked.connect(self.finished_pushed)        
+        finished_button.clicked.connect(self.finished_pushed)
 
-        layout.addWidget(correct_button)
-        layout.addWidget(incorrect_button)
-        layout.addWidget(finished_button)
+        self.correct_label = QLabel("Correct: 0")
+        self.incorrect_label = QLabel("Incorrect: 0")
+
+        layout.addWidget(correct_button, 0, 0)
+        layout.addWidget(incorrect_button, 0, 1)
+        layout.addWidget(finished_button, 0, 2)
+        layout.addWidget(self.correct_label, 1, 0)
+        layout.addWidget(self.incorrect_label, 1, 1)
 
         container = QWidget()
         container.setLayout(layout)
@@ -34,16 +39,20 @@ class AnswerTopicWindow(QMainWindow):
         
     def correct_pushed(self):
         self.answers[0] += 1
+        self.correct_label.setText(f"Correct: {self.answers[0]}")
         
     def incorrect_pushed(self):
         self.answers[1] += 1
+        self.incorrect_label.setText(f"Incorrect: {self.answers[1]}")
 
     def finished_pushed(self):
         confidence = round(min(max((self.answers[0] / sum(self.answers)) - 0.4, 0.0), 0.55) / 0.55, 4)
         topics = pd.read_csv('topics.csv',index_col='topic_name')
         topics.loc[self.topic, 'confidence'] = confidence
+        topics.loc[self.topic, 'review_date'] = getReviewDate(confidence)
         topics.to_csv('topics.csv')
         self.close()
+
 
 class ChooseTopicWindow(QMainWindow):
     def __init__(self):
