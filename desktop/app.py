@@ -10,13 +10,12 @@ def getReviewDate(confidence):
     return (datetime.datetime.today() + dateutil.relativedelta.relativedelta(days=1+int(confidence * max_day))).strftime('%Y-%m-%d')
 
 class AnswerTopicWindow(QMainWindow):
-    def __init__(self, topic, calling_window):
+    def __init__(self, topic):
         super().__init__()
         self.setWindowTitle("Answer topic")
         layout = QHBoxLayout()
         self.answers = [0, 0]
         self.topic = topic
-        self.calling_window = calling_window
         correct_button = QPushButton("Correct")
         incorrect_button = QPushButton("Incorrect")
         finished_button = QPushButton("Finished")
@@ -44,41 +43,41 @@ class AnswerTopicWindow(QMainWindow):
         topics = pd.read_csv('topics.csv',index_col='topic_name')
         topics.loc[self.topic, 'confidence'] = confidence
         topics.to_csv('topics.csv')
-        self.calling_window.finish_topic(self.topic)
         self.close()
 
 class ChooseTopicWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        topics = ["Wills","Property","Relax"]
-        self.setWindowTitle("Choose today's topic")
-        self.scroll = QScrollArea()
-        self.widget = QWidget()
-        self.vbox = QVBoxLayout()
-        self.hbox = QHBoxLayout()
-        self.topicButtons = {}
+        self.setWindowTitle("Self Testing")
+        self.resize(400, 300)
 
-        for topic in testTopics:
-            button = QPushButton(topic)
-            button.pressed.connect(lambda t=topic: self.open_answer_topic(t))
-            self.topicButtons[topic] = button
-            self.vbox.addWidget(button)
-        self.widget.setLayout(self.vbox)
-        
+        self.hbox = QHBoxLayout()
+
+        self.scroll = QScrollArea()
+        self.widgetList = QListWidget()
+        self.scrollBox = QVBoxLayout()
+        self.widgetList.setLayout(self.scrollBox)
+
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll.setWidgetResizable(True)
-        self.scroll.setWidget(self.widget)
+        self.scroll.setWidget(self.widgetList)
+        
+        for topic in self.load_topics():
+            item = QListWidgetItem(topic)
+            self.widgetList.addItem(item)
 
-        button = QPushButton("Add topic")
-        button.pressed.connect(self.add_topic)
+        self.widgetList.itemDoubleClicked.connect(self.open_answer_topic)
 
-        self.hbox.addWidget(button)
-        self.hbox.addWidget(self.scroll)
-        container = QWidget()
-        container.setLayout(self.hbox)
+        self.add_button = QPushButton("Add Topic")
+        self.add_button.pressed.connect(self.add_topic)
 
-        self.setCentralWidget(container)
+        self.hbox.addWidget(self.add_button, 1)
+        self.hbox.addWidget(self.scroll, 2)
+
+        self.container = QWidget()
+        self.container.setLayout(self.hbox)
+        self.setCentralWidget(self.container)
 
     def add_topic(self):
         text, okPressed = QInputDialog.getText(self, "Enter new topic", "New topic:")
@@ -89,12 +88,14 @@ class ChooseTopicWindow(QMainWindow):
         else:
             pd.read_csv('topics.csv', index_col=False)._append({'topic_name': text.strip(), 'confidence': 0.0, 'review_date': getReviewDate(0.0)}, ignore_index=True).set_index('topic_name').to_csv('topics.csv')
 
-    def finish_topic(self, topic):
-        self.topicButtons[topic].setParent(None)
-        del self.topicButtons[topic]
+    def load_topics(self):
+        df = pd.read_csv('topics.csv')
+        df.review_date = pd.to_datetime(df.review_date, format='%Y-%m-%d')
+        return list(df.loc[df.review_date <= datetime.datetime.today(), 'topic_name'].sample(frac=1))
 
     def open_answer_topic(self, topic):
-        self.window = AnswerTopicWindow(topic, self)
+        topic = self.widgetList.takeItem(self.widgetList.row(topic)) # Remove widget from list
+        self.window = AnswerTopicWindow(topic.text())
         self.window.show()
 
 app = QApplication(sys.argv)
