@@ -1,9 +1,21 @@
+from PyQt6 import QtGui
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import *
 import datetime
 import dateutil
 import pandas as pd
+import os
 import sys
+
+try:
+    from ctypes import windll  # Only exists on Windows.
+    myappid = 'studio.lukesoft.study.spacedrecall.1-0'
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except ImportError:
+    pass
+
+basedir = os.path.dirname(__file__)
+TOPICS = os.path.join(basedir, 'data', 'topics.csv')
 
 def getReviewDate(confidence):
     max_day = 30
@@ -47,10 +59,10 @@ class AnswerTopicWindow(QMainWindow):
 
     def finished_pushed(self):
         confidence = round(min(max((self.answers[0] / sum(self.answers)) - 0.4, 0.0), 0.55) / 0.55, 4)
-        topics = pd.read_csv('topics.csv',index_col='topic_name')
+        topics = pd.read_csv(TOPICS,index_col='topic_name')
         topics.loc[self.topic, 'confidence'] = confidence
         topics.loc[self.topic, 'review_date'] = getReviewDate(confidence)
-        topics.to_csv('topics.csv')
+        topics.to_csv(TOPICS)
         self.close()
 
 
@@ -95,10 +107,10 @@ class ChooseTopicWindow(QMainWindow):
         if not text.strip():
             QMessageBox.warning(self, "Input Error", "No topic entered")
         else:
-            pd.read_csv('topics.csv', index_col=False)._append({'topic_name': text.strip(), 'confidence': 0.0, 'review_date': getReviewDate(0.0)}, ignore_index=True).set_index('topic_name').to_csv('topics.csv')
+            pd.read_csv(TOPICS, index_col=False)._append({'topic_name': text.strip(), 'confidence': 0.0, 'review_date': getReviewDate(0.0)}, ignore_index=True).set_index('topic_name').to_csv(TOPICS)
 
     def load_topics(self):
-        df = pd.read_csv('topics.csv')
+        df = pd.read_csv(TOPICS)
         df.review_date = pd.to_datetime(df.review_date, format='%Y-%m-%d')
         return list(df.loc[df.review_date <= datetime.datetime.today(), 'topic_name'].sample(frac=1))
 
@@ -108,6 +120,7 @@ class ChooseTopicWindow(QMainWindow):
         self.window.show()
 
 app = QApplication(sys.argv)
+app.setWindowIcon(QtGui.QIcon(os.path.join(basedir, 'icons', 'study.ico')))
 window = ChooseTopicWindow()
 window.show()
 
