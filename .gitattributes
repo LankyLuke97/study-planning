@@ -1,1 +1,2 @@
 "desktop/Spaced Recall.exe" filter=lfs diff=lfs merge=lfs -text
+"desktop/Spaced Recall.zip" filter=lfs diff=lfs merge=lfs -text
