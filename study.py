@@ -77,7 +77,7 @@ def review(csv, date_threshold):
         questions.to_csv(csv,sep='|')
     if total_questions > 0:
         questions.to_csv(csv,sep='|')
-        print("You got {} out of {} correct".format(correct, total_questions))
+        print("You got {} out of {} correct".format(correct, progress - 1 if progress < total_questions else total_questions))
 
 if __name__=='__main__':
     today = datetime.datetime.today()
