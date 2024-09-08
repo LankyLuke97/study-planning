@@ -23,6 +23,7 @@ DEFAULT_TOPIC_COLUMNS = {
     'last_answered': 0.0
 }
 if not os.path.exists(TOPICS):
+    os.makedirs(os.path.dirname(TOPICS), exist_ok=True)
     with open(TOPICS,'w') as data:
         data.write(f'topic_name,{",".join(DEFAULT_TOPIC_COLUMNS.keys())}')
 
