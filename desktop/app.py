@@ -16,9 +16,15 @@ except ImportError:
 
 basedir = os.path.dirname(__file__)
 TOPICS = os.path.join(basedir, 'data', 'topics.csv')
+DEFAULT_TOPIC_COLUMNS = {
+    'confidence': 0.0,
+    'review_date': datetime.datetime.today().strftime('%Y-%m-%d'),
+    'last_correct': 0.0,
+    'last_answered': 0.0
+}
 if not os.path.exists(TOPICS):
     with open(TOPICS,'w') as data:
-        data.write("topic_name,confidence,review_date,last_correct,last_answered")
+        data.write(f'topic_name,{",".join(DEFAULT_TOPIC_COLUMNS.keys())}')
 
 def getReviewDate(confidence):
     max_day = 30
@@ -69,6 +75,9 @@ class AnswerTopicWindow(QMainWindow):
     def finished_pushed(self):
         confidence = round(min(max((self.answers[0] / sum(self.answers)) - 0.4, 0.0), 0.55) / 0.55, 4)
         topics = pd.read_csv(TOPICS,index_col='topic_name')
+        for col, default in DEFAULT_TOPIC_COLUMNS.items():
+            if col not in topics.columns:
+                topics[col] = default
         topics.loc[self.topic, 'confidence'] = confidence
         topics.loc[self.topic, 'review_date'] = getReviewDate(confidence)
         topics.loc[self.topic, 'last_correct'] = self.answers[0]
@@ -123,6 +132,9 @@ class ChooseTopicWindow(QMainWindow):
     def load_topics(self):
         df = pd.read_csv(TOPICS)
         df.review_date = pd.to_datetime(df.review_date, format='%Y-%m-%d')
+        for col, default in DEFAULT_TOPIC_COLUMNS.items():
+            if col not in df.columns:
+                df[col] = default
         return [f"{row.topic_name} (Last attempt: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in df.loc[df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered']].sample(frac=1).iterrows()]
 
     def open_answer_topic(self, topic):
