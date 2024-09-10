@@ -147,7 +147,7 @@ class ChooseTopicWindow(QMainWindow):
     def update_topics(self):
         self.widgetList.clear()
         for topic in self.topics_list:
-            if not (self.search_bar.text() == "" or self.search_bar.text() in topic.split("(Last attempt: ")[0].strip()):
+            if not (self.search_bar.text() == "" or self.search_bar.text().lower() in topic.split("(Last attempt: ")[0].strip().lower()):
                 continue
             item = QListWidgetItem(topic)
             self.widgetList.addItem(item)
