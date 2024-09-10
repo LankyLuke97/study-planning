@@ -74,7 +74,7 @@ class AnswerTopicWindow(QMainWindow):
         self.incorrect_label.setText(f"Incorrect: {self.answers[1]}")
 
     def finished_pushed(self):
-        confidence = round(min(max((self.answers[0] / sum(self.answers)) - 0.4, 0.0), 0.55) / 0.55, 4)
+        confidence = 0 if sum(self.answers) == 0 else round(min(max((self.answers[0] / sum(self.answers)) - 0.4, 0.0), 0.55) / 0.55, 4)
         topics = pd.read_csv(TOPICS,index_col='topic_name')
         for col, default in DEFAULT_TOPIC_COLUMNS.items():
             if col not in topics.columns:
@@ -94,6 +94,7 @@ class ChooseTopicWindow(QMainWindow):
         self.resize(400, 300)
 
         self.hbox = QHBoxLayout()
+        self.vbox = QVBoxLayout()
         self.topics_list = self.load_topics()
 
         self.scroll = QScrollArea()
@@ -106,17 +107,20 @@ class ChooseTopicWindow(QMainWindow):
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(self.widgetList)
         
-        self.update_topics("")
-
         self.add_button = QPushButton("Add Topic")
         self.add_button.pressed.connect(self.add_topic)
 
-        self.search_bar = QLineEdit("Search topics")
+        self.search_bar = QLineEdit("")
         self.search_bar.textChanged.connect(self.update_topics)
 
-        # Need a vertical box here as well, probably below the add topic button
-
-        self.hbox.addWidget(self.add_button, 1)
+        self.update_topics()
+        self.widgetList.itemDoubleClicked.connect(self.open_answer_topic)
+        
+        self.inner_container = QWidget()
+        self.vbox.addWidget(self.add_button, 1)
+        self.vbox.addWidget(self.search_bar, 2)
+        self.inner_container.setLayout(self.vbox)
+        self.hbox.addWidget(self.inner_container, 1)
         self.hbox.addWidget(self.scroll, 2)
 
         self.container = QWidget()
@@ -140,18 +144,18 @@ class ChooseTopicWindow(QMainWindow):
                 df[col] = default
         return [f"{row.topic_name} (Last attempt: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in df.loc[df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered']].sample(frac=1).iterrows()]
 
-    def update_topics(self, text):
+    def update_topics(self):
         self.widgetList.clear()
-        for topic in self.load_topics():
-            if not (text == "" or text in topic):
+        for topic in self.topics_list:
+            if not (self.search_bar.text() == "" or self.search_bar.text() in topic.split("(Last attempt: ")[0].strip()):
                 continue
             item = QListWidgetItem(topic)
             self.widgetList.addItem(item)
-        self.widgetList.itemDoubleClicked.connect(self.open_answer_topic)
 
     def open_answer_topic(self, topic):
         topic_label = self.widgetList.takeItem(self.widgetList.row(topic)) # Remove widget from list
         topic_name = topic_label.text().split("(Last attempt: ")[0].strip()
+        self.topics_list.remove(topic_label.text())
         self.window = AnswerTopicWindow(topic_name)
         self.window.show()
 
