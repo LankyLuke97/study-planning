@@ -96,7 +96,6 @@ class ChooseTopicWindow(QMainWindow):
 
         self.hbox = QHBoxLayout()
         self.vbox = QVBoxLayout()
-        self.topics_list = self.get_topic_list()
 
         self.scroll = QScrollArea()
         self.widgetList = QListWidget()
@@ -113,6 +112,8 @@ class ChooseTopicWindow(QMainWindow):
 
         self.search_bar = QLineEdit("")
         self.search_bar.textChanged.connect(self.update_topics)
+        self.topics_list = []
+        self.set_topics_list()
         self.topic_count = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
         self.update_topic_count()
 
@@ -120,11 +121,11 @@ class ChooseTopicWindow(QMainWindow):
         self.widgetList.itemDoubleClicked.connect(self.open_answer_topic)
 
         self.oldest_order_button = QPushButton("Order by oldest")
-        self.oldest_order_button.clicked.connect(lambda: self.update_topics(0))
+        self.oldest_order_button.clicked.connect(lambda: self.set_topics_list(0))
         self.least_confidence_order_button = QPushButton("Order by confidence")
-        self.least_confidence_order_button.clicked.connect(lambda: self.update_topics(1))
+        self.least_confidence_order_button.clicked.connect(lambda: self.set_topics_list(1))
         self.random_order_button = QPushButton("Random order")
-        self.random_order_button.clicked.connect(lambda: self.update_topics(2))
+        self.random_order_button.clicked.connect(lambda: self.set_topics_list(2))
         
         self.inner_vertical_container = QWidget()
         self.vbox.addWidget(self.topic_count)
@@ -161,28 +162,27 @@ class ChooseTopicWindow(QMainWindow):
         self.df.last_attempted = pd.to_datetime(self.df.last_attempted, format='%Y-%m-%d')
         self.df.to_csv(TOPICS, index=False)
 
-    def get_topic_list(self, ordering=2):
-        print(ordering)
+    def set_topics_list(self, ordering=2):
         self.load_topics()
         if ordering == 0:
             self.df = self.df.sort_values(by='last_attempted')
-            return [f"{row.topic_name} (Last attempt on {row.last_attempted.strftime('%Y-%m-%d')}: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in self.df.loc[self.df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered','last_attempted']].iterrows()]
+            self.topics_list = [f"{row.topic_name} (Last attempt on {row.last_attempted.strftime('%Y-%m-%d')}: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in self.df.loc[self.df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered','last_attempted']].iterrows()]
         elif ordering == 1:
             self.df = self.df.sort_values(by='confidence')
-            return [f"{row.topic_name} (Last attempt on {row.last_attempted.strftime('%Y-%m-%d')}: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in self.df.loc[self.df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered','last_attempted']].iterrows()]
+            self.topics_list = [f"{row.topic_name} (Last attempt on {row.last_attempted.strftime('%Y-%m-%d')}: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in self.df.loc[self.df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered','last_attempted']].iterrows()]
         elif ordering == 2:
-            return [f"{row.topic_name} (Last attempt on {row.last_attempted.strftime('%Y-%m-%d')}: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in self.df.loc[self.df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered','last_attempted']].sample(frac=1).iterrows()]
+            self.topics_list = [f"{row.topic_name} (Last attempt on {row.last_attempted.strftime('%Y-%m-%d')}: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in self.df.loc[self.df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered','last_attempted']].sample(frac=1).iterrows()]
         else:
             raise ValueError(f"Ordering type {ordering} is not supported for topic list")
+        self.update_topics()
 
     def update_topic_count(self):
         self.topic_count.setText(f"There are {len(self.topics_list)} topics remaining")
 
-    def update_topics(self, ordering=2):
+    def update_topics(self):
         self.widgetList.clear()
-        self.topics_list = self.get_topic_list(ordering)
         for topic in self.topics_list:
-            if not (self.search_bar.text() == "" or self.search_bar.text().lower() in topic.split("(Last attempt: ")[0].strip().lower()):
+            if not (self.search_bar.text() == "" or self.search_bar.text().lower() in topic.split("(Last attempt on ")[0].strip().lower()):
                 continue
             item = QListWidgetItem(topic)
             self.widgetList.addItem(item)
