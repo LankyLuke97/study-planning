@@ -20,7 +20,8 @@ DEFAULT_TOPIC_COLUMNS = {
     'confidence': 0.0,
     'review_date': datetime.datetime.today().strftime('%Y-%m-%d'),
     'last_correct': 0.0,
-    'last_answered': 0.0
+    'last_answered': 0.0,
+    'last_attempted': '2024-01-01'
 }
 if not os.path.exists(TOPICS):
     os.makedirs(os.path.dirname(TOPICS), exist_ok=True)
@@ -83,9 +84,9 @@ class AnswerTopicWindow(QMainWindow):
         topics.loc[self.topic, 'review_date'] = getReviewDate(confidence)
         topics.loc[self.topic, 'last_correct'] = self.answers[0]
         topics.loc[self.topic, 'last_answered'] = sum(self.answers)
+        topics.loc[self.topic, 'last_attempted'] = datetime.datetime.today().strftime('%Y-%m-%d')
         topics.to_csv(TOPICS)
         self.close()
-
 
 class ChooseTopicWindow(QMainWindow):
     def __init__(self):
@@ -95,7 +96,7 @@ class ChooseTopicWindow(QMainWindow):
 
         self.hbox = QHBoxLayout()
         self.vbox = QVBoxLayout()
-        self.topics_list = self.load_topics()
+        self.topics_list = self.get_topic_list()
 
         self.scroll = QScrollArea()
         self.widgetList = QListWidget()
@@ -112,15 +113,28 @@ class ChooseTopicWindow(QMainWindow):
 
         self.search_bar = QLineEdit("")
         self.search_bar.textChanged.connect(self.update_topics)
+        self.topic_count = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
+        self.update_topic_count()
 
         self.update_topics()
         self.widgetList.itemDoubleClicked.connect(self.open_answer_topic)
+
+        self.oldest_order_button = QPushButton("Order by oldest")
+        self.oldest_order_button.clicked.connect(lambda: self.update_topics(0))
+        self.least_confidence_order_button = QPushButton("Order by confidence")
+        self.least_confidence_order_button.clicked.connect(lambda: self.update_topics(1))
+        self.random_order_button = QPushButton("Random order")
+        self.random_order_button.clicked.connect(lambda: self.update_topics(2))
         
-        self.inner_container = QWidget()
-        self.vbox.addWidget(self.add_button, 1)
-        self.vbox.addWidget(self.search_bar, 2)
-        self.inner_container.setLayout(self.vbox)
-        self.hbox.addWidget(self.inner_container, 1)
+        self.inner_vertical_container = QWidget()
+        self.vbox.addWidget(self.topic_count)
+        self.vbox.addWidget(self.oldest_order_button)
+        self.vbox.addWidget(self.least_confidence_order_button)
+        self.vbox.addWidget(self.random_order_button)
+        self.vbox.addWidget(self.add_button)
+        self.vbox.addWidget(self.search_bar)
+        self.inner_vertical_container.setLayout(self.vbox)
+        self.hbox.addWidget(self.inner_vertical_container, 1)
         self.hbox.addWidget(self.scroll, 2)
 
         self.container = QWidget()
@@ -134,18 +148,39 @@ class ChooseTopicWindow(QMainWindow):
         if not text.strip():
             QMessageBox.warning(self, "Input Error", "No topic entered")
         else:
-            pd.read_csv(TOPICS, index_col=False)._append({'topic_name': text.strip(), 'confidence': 0.0, 'review_date': getReviewDate(0.0), 'last_correct': 0.0, 'last_answered': 0.0}, ignore_index=True).set_index('topic_name').to_csv(TOPICS)
+            newRow = DEFAULT_TOPIC_COLUMNS
+            newRow['topic_name'] = text.strip()
+            pd.read_csv(TOPICS, index_col=False)._append(newRow, ignore_index=True).set_index('topic_name').to_csv(TOPICS)
 
     def load_topics(self):
-        df = pd.read_csv(TOPICS)
-        df.review_date = pd.to_datetime(df.review_date, format='%Y-%m-%d')
+        self.df = pd.read_csv(TOPICS)
         for col, default in DEFAULT_TOPIC_COLUMNS.items():
-            if col not in df.columns:
-                df[col] = default
-        return [f"{row.topic_name} (Last attempt: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in df.loc[df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered']].sample(frac=1).iterrows()]
+            if col not in self.df.columns:
+                self.df[col] = default
+        self.df.review_date = pd.to_datetime(self.df.review_date, format='%Y-%m-%d')
+        self.df.last_attempted = pd.to_datetime(self.df.last_attempted, format='%Y-%m-%d')
+        self.df.to_csv(TOPICS, index=False)
 
-    def update_topics(self):
+    def get_topic_list(self, ordering=2):
+        print(ordering)
+        self.load_topics()
+        if ordering == 0:
+            self.df = self.df.sort_values(by='last_attempted')
+            return [f"{row.topic_name} (Last attempt on {row.last_attempted.strftime('%Y-%m-%d')}: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in self.df.loc[self.df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered','last_attempted']].iterrows()]
+        elif ordering == 1:
+            self.df = self.df.sort_values(by='confidence')
+            return [f"{row.topic_name} (Last attempt on {row.last_attempted.strftime('%Y-%m-%d')}: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in self.df.loc[self.df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered','last_attempted']].iterrows()]
+        elif ordering == 2:
+            return [f"{row.topic_name} (Last attempt on {row.last_attempted.strftime('%Y-%m-%d')}: {int(row.last_correct)}/{int(row.last_answered)})" for _, row in self.df.loc[self.df.review_date <= datetime.datetime.today(), ['topic_name','last_correct','last_answered','last_attempted']].sample(frac=1).iterrows()]
+        else:
+            raise ValueError(f"Ordering type {ordering} is not supported for topic list")
+
+    def update_topic_count(self):
+        self.topic_count.setText(f"There are {len(self.topics_list)} topics remaining")
+
+    def update_topics(self, ordering=2):
         self.widgetList.clear()
+        self.topics_list = self.get_topic_list(ordering)
         for topic in self.topics_list:
             if not (self.search_bar.text() == "" or self.search_bar.text().lower() in topic.split("(Last attempt: ")[0].strip().lower()):
                 continue
@@ -156,6 +191,7 @@ class ChooseTopicWindow(QMainWindow):
         topic_label = self.widgetList.takeItem(self.widgetList.row(topic)) # Remove widget from list
         topic_name = topic_label.text().split("(Last attempt: ")[0].strip()
         self.topics_list.remove(topic_label.text())
+        self.update_topic_count()
         self.window = AnswerTopicWindow(topic_name)
         self.window.show()
 

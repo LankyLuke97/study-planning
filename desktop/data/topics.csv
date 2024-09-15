@@ -1,4 +1,5 @@
-topic_name,confidence,review_date,last_correct,last_answered
-test 1,0,2024-07-01,0,0
-another test ,0,2024-07-01,0,0
-different name,0,2024-07-01,0,0
+topic_name,confidence,review_date,last_correct,last_answered,last_attempted
+test 1,0.2,2024-09-01,2.0,3.0,2024-08-01
+different name,0.9091,2024-09-13,9.0,10.0,2024-01-01
+another test,0.48,2024-09-02,2.0,3.0,2024-02-01
+testing new topic,0.0,2024-09-16,0.0,0.0,2024-01-01
