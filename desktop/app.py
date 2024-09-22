@@ -189,7 +189,7 @@ class ChooseTopicWindow(QMainWindow):
 
     def open_answer_topic(self, topic):
         topic_label = self.widgetList.takeItem(self.widgetList.row(topic)) # Remove widget from list
-        topic_name = topic_label.text().split("(Last attempt: ")[0].strip()
+        topic_name = topic_label.text().split("(Last attempt ")[0].strip()
         self.topics_list.remove(topic_label.text())
         self.update_topic_count()
         self.window = AnswerTopicWindow(topic_name)
