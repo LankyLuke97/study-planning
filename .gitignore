@@ -124,6 +124,8 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+Spaced\ Recall*.zip
+
 # Environments
 .env
 .venv
