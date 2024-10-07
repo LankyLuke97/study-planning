@@ -75,7 +75,7 @@ class AnswerTopicWindow(QMainWindow):
         self.incorrect_label.setText(f"Incorrect: {self.answers[1]}")
 
     def finished_pushed(self):
-        confidence = 0 if sum(self.answers) == 0 else round(min(max((self.answers[0] / sum(self.answers)) - 0.4, 0.0), 0.55) / 0.55, 4)
+        confidence = 0 if sum(self.answers) == 0 else (self.answers[0] / sum(self.answers))
         topics = pd.read_csv(TOPICS,index_col='topic_name')
         for col, default in DEFAULT_TOPIC_COLUMNS.items():
             if col not in topics.columns:
