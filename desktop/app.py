@@ -33,9 +33,10 @@ def getReviewDate(confidence):
     return (datetime.datetime.today() + dateutil.relativedelta.relativedelta(days=1+int(confidence * max_day))).strftime('%Y-%m-%d')
 
 class AnswerTopicWindow(QMainWindow):
-    def __init__(self, topic):
+    def __init__(self, choose_topic_window, topic):
         super().__init__()
         self.setWindowTitle(f"Answering {topic}")
+        self.choose_topic_window = choose_topic_window
         layout = QVBoxLayout()
         grid = QGridLayout()
         self.answers = [0, 0]
@@ -86,6 +87,7 @@ class AnswerTopicWindow(QMainWindow):
         topics.loc[self.topic, 'last_answered'] = sum(self.answers)
         topics.loc[self.topic, 'last_attempted'] = datetime.datetime.today().strftime('%Y-%m-%d')
         topics.to_csv(TOPICS)
+        self.choose_topic_window.update_topics_completed()
         self.close()
 
 class ChooseTopicWindow(QMainWindow):
@@ -117,6 +119,10 @@ class ChooseTopicWindow(QMainWindow):
         self.topic_count = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
         self.update_topic_count()
 
+        self.completed_topics_count = 0
+        self.topics_completed = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
+        self.update_topics_completed()
+
         self.update_topics()
         self.widgetList.itemDoubleClicked.connect(self.open_answer_topic)
 
@@ -128,6 +134,7 @@ class ChooseTopicWindow(QMainWindow):
         self.random_order_button.clicked.connect(lambda: self.set_topics_list(2))
         
         self.inner_vertical_container = QWidget()
+        self.vbox.addWidget(self.topics_completed)
         self.vbox.addWidget(self.topic_count)
         self.vbox.addWidget(self.oldest_order_button)
         self.vbox.addWidget(self.least_confidence_order_button)
@@ -179,6 +186,11 @@ class ChooseTopicWindow(QMainWindow):
     def update_topic_count(self):
         self.topic_count.setText(f"There are {len(self.topics_list)} topics remaining")
 
+    def update_topics_completed(self):
+        self.load_topics()
+        self.df['last_attempted'] = pd.to_datetime(self.df['last_attempted'])
+        self.topics_completed.setText(f"You have completed {self.df[self.df.last_attempted.dt.date == datetime.datetime.today().date()].shape[0]} topics today")
+
     def update_topics(self):
         self.widgetList.clear()
         for topic in self.topics_list:
@@ -192,7 +204,7 @@ class ChooseTopicWindow(QMainWindow):
         topic_name = topic_label.text().split("(Last attempt ")[0].strip()
         self.topics_list.remove(topic_label.text())
         self.update_topic_count()
-        self.window = AnswerTopicWindow(topic_name)
+        self.window = AnswerTopicWindow(self, topic_name)
         self.window.show()
 
 app = QApplication(sys.argv)
