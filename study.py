@@ -40,12 +40,12 @@ def newStudy(csv, today):
     newDB = pd.concat([currentDB, pd.DataFrame(newQuestions)], ignore_index=True)
     newDB.to_csv(csv,sep='|')
 
-def review(csv, date_threshold):
+def review(csv, date_threshold, confidence_level=10):
     questions = pd.read_csv(csv,index_col=0,sep='|')
     questions.fillna(' ', inplace=True)
     questions['review_date'] = pd.to_datetime(questions['review_date'], format='%Y-%m-%d')
     questions['hint'] = questions['hint'].astype(str)
-    todays = questions.loc[questions['review_date'] <= date_threshold, :].sample(frac=1)
+    todays = questions.loc[(questions['review_box'] <= confidence_level) & (questions['review_date'] <= date_threshold), :].sample(frac=1)
     print('Spread of questions:')
     print(questions['review_date'].value_counts().sort_index(ascending=True))
     print('There are {} questions to answer today.'.format(len(todays)))
@@ -91,5 +91,12 @@ if __name__=='__main__':
             sys.exit() 
 
     newStudy(f"{topic}.csv", today)
-    if input('Would you like to review questions for today? ').lower().startswith('y'):
+    review_input = input('Would you like to review questions for today? ').lower()
+    if review_input.startswith('y'):
         questions = review(f"{topic}.csv", today)
+    else:
+        try:
+            confidence = int(review_input)
+            questions = review(f"{topic}.csv", today, confidence_level=confidence)
+        except:
+            pass
